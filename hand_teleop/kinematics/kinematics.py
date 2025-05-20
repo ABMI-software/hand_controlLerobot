@@ -19,10 +19,11 @@ class RobotKinematics:
         • J    -> jacobian(q, frame)
         • IK   -> ik(q0, target_T, frame)
     """
-    def __init__(self, urdf_path: str, frame_name: str = "gripper_tip"):
+    def __init__(self, urdf_path: str, frame_name: str = "gripper_link"):
         if not urdf_path.endswith(".urdf"):
             urdf_path = os.path.join(os.path.dirname(__file__), "urdf", f"{urdf_path}.urdf")
 
+        self.urdf_path = urdf_path
         self.model = pin.buildModelFromUrdf(urdf_path)
         self.data = self.model.createData()
         self.frame_id = self.model.getFrameId(frame_name)
