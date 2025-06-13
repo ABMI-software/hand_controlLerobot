@@ -34,7 +34,10 @@ def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor"):
     if test_joint:
         kin = tracker.robot_kin
         q0 = np.array([0,2,2,0,0])
-        follower_joint = kin.ik(q0, make_target_transform(follower_pos, follower_rot))[:5]
+        follower_joint = np.append(
+            kin.ik(q0, make_target_transform(follower_pos, follower_rot))[:5],
+            follower_pose.open_degree
+        )
         viz = RobotVisualisation(kin, "so100")
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -72,7 +75,7 @@ def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor"):
         if not quiet:
             if test_joint:
                 print(f"Joints: {np.round(q, 3)} | FPS: {ema_fps:.1f}")
-                viz.draw(ax, q)
+                viz.draw(ax, q[:5])
                 plt.pause(0.001)
             else:
                 print(f"Pos: {pose.pos.round(2)}, Euler: {pose.rot_euler.round(1)}, "

@@ -192,6 +192,8 @@ class HandTracker:
 
     def _pause(self):
         self.tracking_paused = True
+        with self._lock:
+            self.kf.x[3:] = 0.0  # Zero velocity
 
     def _resume(self):
         self.tracking_paused = False
@@ -215,6 +217,8 @@ class HandTracker:
     # Internal helper – predict only
     # ------------------------------------------------------------------
     def _predict_only(self) -> None:
+        if self.tracking_paused:
+            return  # freeze everything during pause
         """Advance the filter to 'now' without using any new measurement."""
         now = time.perf_counter()
         dt = now - self._kf_t
@@ -259,22 +263,26 @@ class HandTracker:
         Compute the current absolute joint configuration by using a joint-space base pose
         and applying the relative hand motion as a delta in cartesian space.
 
-        Returns:
-            A joint position array (same shape as base_pose_joint)
+        Expects and returns a 6-element array: [j1, j2, j3, j4, j5, gripper_open].
         """
         if self.robot_kin is None:
             raise RuntimeError("robot_kin is not initialized. Pass a URDF to use this function.")
 
-        # Convert joint-space base pose to cartesian
-        base_pose = self.robot_kin.fk(base_pose_joint)
-        base_gripper_pose = GripperPose.from_matrix(base_pose)
+        arm_joints = base_pose_joint[:5]
+        gripper_val = float(base_pose_joint[5])
 
-        # Get the full gripper pose (cartesian)
+        # Convert arm joint-space to Cartesian
+        base_pose = self.robot_kin.fk(arm_joints)
+        base_gripper_pose = GripperPose.from_matrix(base_pose, open_degree=gripper_val)
+
+        # Apply relative hand motion
         final_gripper_pose = self.read_hand_state(base_gripper_pose)
 
-        # Use IK to get the corresponding joint configuration
-        q_result = self.robot_kin.ik(base_pose_joint.copy(), final_gripper_pose.to_matrix())
-        return q_result
+        # Compute new arm joint configuration from IK
+        new_arm_joints = self.robot_kin.ik(arm_joints.copy(), final_gripper_pose.to_matrix())
+
+        # Combine with gripper
+        return np.append(new_arm_joints, final_gripper_pose.open_degree).astype(np.float32)
 
     # ------------------------------------------------------------------
     # Cleanup helper (optional)
