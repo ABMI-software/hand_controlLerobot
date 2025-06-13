@@ -33,11 +33,12 @@ def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor"):
     # --- if joint-space test: pose → joints via IK -----------------------------
     if test_joint:
         kin = tracker.robot_kin
-        q0 = np.zeros(kin.model.nq)
+        q0 = np.array([0,2,2,0,0])
         follower_joint = kin.ik(q0, make_target_transform(follower_pos, follower_rot))[:5]
         viz = RobotVisualisation(kin, "so100")
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
+        print(follower_joint)
     # -------------------------------------------------------------------------
     target_dt = 1.0 / fps
     ema_fps, correction = None, 0.0  # for adaptive sleep
