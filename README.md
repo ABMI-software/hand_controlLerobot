@@ -1,64 +1,115 @@
+Absolutely. Here’s the updated version with that note added clearly but concisely:
+
+---
+
 # hand-teleop
 
-**hand-teleop** turns webcam input into robot joint positions in real time.
-Built for [LeRobot](https://github.com/huggingface/lerobot), it runs directly in your Python process — no server required.
+**hand-teleop** turns your webcam into real-time robot joint positions — no servers, just pure Python.
 
-## Features
+Designed for [LeRobot](https://github.com/huggingface/lerobot), it runs fast, smooth, and locally.
 
-* **Wilor** (GPU) and **MediaPose** (CPU) support
-* Direct joint output (no need for separate IK)
-* Kalman filter smoothing for jitter-free movement
-* Minimal latency, runs separately in background thread
-* easy to get started, with one line pip installation
-* built-in monkey patch for lerobot integration
+## Highlights
+
+* ⚡ **Wilor model** (GPU) — accurate and real-time (currently the only fully working backend)
+* 🧩 **AprilTag-based fingertip tracking** (experimental)
+* 🖐️ Direct joint outputs — no inverse kinematics required
+* 🔄 Built-in Kalman smoothing for low-jitter motion
+* 🧵 Low-latency threading: tracking runs in the background
+* 🧩 Plug-and-play with LeRobot
+
+---
 
 ## Installation
 
-### GPU-based (Wilor – accurate, requires CUDA)
+### ✅ Recommended (Wilor – GPU-based, CUDA required)
 
 ```bash
 pip install "hand-teleop @ git+https://github.com/joeclinton1/hand-teleop.git#egg=hand-teleop[wilor]"
 ```
 
-### CPU-based (MediaPipe – lightweight)
+> ✅ **Works well out of the box**
+> ⚠️ **Requires GPU with CUDA**
+
+---
+
+### ⚠️ Experimental CPU-based Backends
 
 ```bash
 pip install "hand-teleop @ git+https://github.com/joeclinton1/hand-teleop.git#egg=hand-teleop[mediapipe]"
+pip install "hand-teleop @ git+https://github.com/joeclinton1/hand-teleop.git#egg=hand-teleop[apriltag]"
 ```
 
-### Development install
+> 🧪 These are **almost working**, but not quite stable yet.
+> 🙏 **PRs welcome** to help fix or improve them!
+
+---
+
+### 🛠 Development Install
 
 ```bash
-# Create and activate a clean Python 3.10 environment
 conda create -n hand-teleop python=3.10 -y
 conda activate hand-teleop
-
-# (Optional) Install ffmpeg if needed for webcam/video support
 conda install -c conda-forge ffmpeg
 
-# Clone the repo and install in editable mode
 git clone https://github.com/joeclinton1/hand-teleop.git
 cd hand-teleop
-pip install -e ".[wilor]"  # or ".[mediapipe]"
+pip install -e ".[wilor]"
 ```
 
-### Optional: Enable `read_hand_state_joint` (requires Pinocchio)
+---
 
-If you want to use `read_hand_state_joint` or any functionality that relies on forward/inverse kinematics, you'll need to install the `pinocchio` library separately, as it's not available on PyPI and cannot be managed directly by Poetry.
+### Optional (for forward/inverse kinematics)
 
 ```bash
 conda install -c conda-forge pinocchio
-````
+```
 
-This step is **only required** if you're using joint-space kinematics features. All other functionality will work without it. If `pinocchio` is missing and you attempt to use these features, you'll get an error message.
+---
 
+## AprilTag Setup (for cube-based tracking)
+
+If you're experimenting with the `apriltag` model, here's the intended tag layout:
+
+### Cube Tag Layout
+
+Each cube is 2.5 cm with 1.8 cm-wide tags.
+
+| Face   | Index Tags | Thumb Tags |
+| ------ | ---------- | ---------- |
+| Front  | 0          | 5          |
+| Left   | 1          | 6          |
+| Right  | 2          | 7          |
+| Top    | 3          | 8          |
+| Bottom | 4          | 9          |
+
+```
+      +------+       
+      |  3   |     ↑ Top
+ +----+------+----+
+ |  1 |  0   |  2 |   → Front = 0
+ +----+------+----+
+      |  4   |     ↓ Bottom
+      +------+
+```
+
+* Only **one visible tag per cube** is needed.
+* Automatically selects the best visible tag.
+
+---
+
+### Assets
+
+* STL: `assets/finger_tip_cubes.stl`
+* Printable tags: `assets/tag25h9_0-9,0-9/`
+
+---
 
 ## Basic Usage
 
 ```python
 from hand_teleop import HandTracker
 
-tracker = HandTracker(model="mediapipe", hand="right", cam_idx=0)
+tracker = HandTracker(model="wilor", hand="right", cam_idx=0)
 tracker.start()
 
 while True:
@@ -68,22 +119,25 @@ while True:
 
 ---
 
-## Running the Demo
-
-To quickly test hand tracking with your webcam, run:
+## Demo
 
 ```bash
-python main.py  # add --quiet to suppress output
+python main.py
 ```
 
-This opens your webcam and prints hand pose and FPS. Press `q` or `Esc` to exit.
+### Command-line options
+
+* `--model wilor` — Hand model to use
+* `--fps 30` — Frame rate (default: 60)
+* `--quiet` — Silence console output
+* `--no-joint` — Output raw gripper pose
 
 ---
 
-## Keyboard Controls
+## Controls
 
-* `p` – Pause/resume
-* `space` – Realign temporarily (hold to pause tracking)
+* `p` — Pause/resume
+* `space` — Hold to realign
 
 ---
 

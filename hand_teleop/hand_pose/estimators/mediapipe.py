@@ -39,13 +39,13 @@ class MediaPipeEstimator(HandPoseEstimator):
         self._ts_ms = 0  # rolling video timestamp
 
     # ------------------------------------------------------------------ #
-    def __call__(self, frame_bgr: np.ndarray, f_px: float) -> List[HandKeypointsPred]:
-        h, w = frame_bgr.shape[:2]
+    def __call__(self, frame_rgb: np.ndarray, f_px: float) -> List[HandKeypointsPred]:
+        h, w = frame_rgb.shape[:2]
         cx, cy = w * 0.5, h * 0.5
 
         mp_img = mp.Image(
             image_format=mp.ImageFormat.SRGB,
-            data=cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB),
+            data=frame_rgb,
         )
         res = self._rec.recognize_for_video(mp_img, self._ts_ms)
         self._ts_ms += self._DT_MS

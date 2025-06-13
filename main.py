@@ -8,7 +8,6 @@ from scipy.spatial.transform import Rotation as R  # noqa: N817
 
 from hand_teleop.gripper_pose.gripper_pose import GripperPose
 from hand_teleop.hand_pose.factory import ModelName
-from hand_teleop.kinematics.kinematics import RobotKinematics
 from hand_teleop.kinematics.robot_visualisation import RobotVisualisation
 from hand_teleop.tracking.tracker import HandTracker
 

@@ -71,14 +71,14 @@ class GripperPoseComputer:
     ) -> Optional[GripperPose]:
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         preds = self.estimator(frame_rgb, focal_length)
+        if len(preds)>1:
+            corrected_hand = "left" if self.hand == "right" else "right" # we do this because we use expect the frame to be flipped horizontally
+            preds = [p for p in preds if p.is_right == (corrected_hand == "right")]
 
-        corrected_hand = "left" if self.hand == "right" else "right" # we do this because we use expect the frame to be flipped horizontally
-        matching_preds = [p for p in preds if p.is_right == (corrected_hand == "right")]
-
-        if not matching_preds:
+        if not preds:
             return None
 
-        keypoints = matching_preds[0].keypoints
+        keypoints = preds[0].keypoints
         pose = self._compute_gripper_pose(keypoints)
         pose.change_basis(self.robot_axes_in_hand, cam_t)
         return pose
