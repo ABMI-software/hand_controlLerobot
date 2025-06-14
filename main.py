@@ -41,7 +41,7 @@ def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor"):
         kin = tracker.robot_kin
         q0 = np.array([0,2,2,0,0])
         follower_joint = np.append(
-            kin.ik(q0, make_target_transform(follower_pos, follower_rot))[:5],
+            np.degrees(kin.ik(q0, make_target_transform(follower_pos, follower_rot))[:5]),
             follower_pose.open_degree
         )
         viz = RobotVisualisation(kin, "so100")

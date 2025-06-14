@@ -263,30 +263,32 @@ class HandTracker:
         Compute the current absolute joint configuration by using a joint-space base pose
         and applying the relative hand motion as a delta in cartesian space.
 
-        Expects and returns a 6-element array: [j1, j2, j3, j4, j5, gripper_open].
+        Expects and returns a 6-element array in degrees: [j1, j2, j3, j4, j5, gripper_open].
         """
         if self.robot_kin is None:
             raise RuntimeError("robot_kin is not initialized. Pass a URDF to use this function.")
 
-        arm_joints = base_pose_joint[:5]
-        gripper_val = float(base_pose_joint[5])
+        # Convert base joint angles to radians for kinematics
+        arm_joints_rad = np.radians(base_pose_joint[:5])
+        gripper_val = float(base_pose_joint[5])  # gripper remains in degrees
 
-        # Convert arm joint-space to Cartesian
-        base_pose = self.robot_kin.fk(arm_joints)
+        # Forward kinematics in radians
+        base_pose = self.robot_kin.fk(arm_joints_rad)
         base_gripper_pose = GripperPose.from_matrix(base_pose, open_degree=gripper_val)
 
         # Apply relative hand motion
         final_gripper_pose = self.read_hand_state(base_gripper_pose)
 
         if safe_range:
-            # ensure safe range to pose output so we don't break the arm
             final_gripper_pose.clip(safe_range)
 
-        # Compute new arm joint configuration from IK
-        new_arm_joints = self.robot_kin.ik(arm_joints.copy(), final_gripper_pose.to_matrix())
+        # Inverse kinematics returns radians
+        new_arm_joints_rad = self.robot_kin.ik(arm_joints_rad.copy(), final_gripper_pose.to_matrix())
 
-        # Combine with gripper
-        return np.append(new_arm_joints, final_gripper_pose.open_degree).astype(np.float32)
+        # Convert result back to degrees
+        new_arm_joints_deg = np.degrees(new_arm_joints_rad)
+
+        return np.append(new_arm_joints_deg, final_gripper_pose.open_degree).astype(np.float32)
 
     # ------------------------------------------------------------------
     # Cleanup helper (optional)
