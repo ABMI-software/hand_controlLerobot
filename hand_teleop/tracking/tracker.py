@@ -248,9 +248,9 @@ class HandTracker:
         Also stores the final pose for visualization.
         """
         rel = self.predict_pose()
-        rel.open_degree += base_pose.open_degree
         if self.base_pose is None:
             self.base_pose = base_pose.copy()
+        rel.open_degree += self.base_pose.open_degree
 
         final_pose = self.base_pose.copy()
         final_pose.transform_pose(rel.rot, rel.pos)
