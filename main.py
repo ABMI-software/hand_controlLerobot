@@ -15,7 +15,7 @@ SAFE_RANGE = {
     "x": (0.13, 0.36),
     "y": (-0.23, 0.23),
     "z": (0.008, 0.25),
-    "g": (3, 80),
+    "g": (90, 170),
 }
 
 # --------------------------------------------------------------------- #
@@ -34,7 +34,7 @@ def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor"):
     # --- follower pose in SE(3) ------------------------------------------------
     follower_pos = np.array([0.2, 0, 0.1])
     follower_rot = R.from_euler("ZYX", [0, 45, -90], degrees=True).as_matrix()
-    follower_pose = GripperPose(follower_pos, follower_rot, open_degree=5)
+    follower_pose = GripperPose(follower_pos, follower_rot, open_degree=95)
 
     # --- if joint-space test: pose → joints via IK -----------------------------
     if test_joint:
@@ -81,7 +81,8 @@ def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor"):
         if not quiet:
             if test_joint:
                 print(f"Joints: {np.round(q, 3)} | FPS: {ema_fps:.1f}")
-                viz.draw(ax, q[:5])
+                q[-1] -= follower_joint[-1] # make the gripper degree relative to start for viz
+                viz.draw(ax, q)
                 plt.pause(0.001)
             else:
                 print(f"Pos: {pose.pos.round(2)}, Euler: {pose.rot_euler.round(1)}, "
