@@ -248,6 +248,8 @@ class HandTracker:
         Also stores the final pose for visualization.
         """
         rel = self.predict_pose()
+        if self.tracking_paused:
+            rel.open_degree = base_pose.open_degree
 
         if self.base_pose is None:
             self.base_pose = base_pose.copy()
