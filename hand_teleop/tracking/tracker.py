@@ -260,7 +260,7 @@ class HandTracker:
         self._last_final_pose = final_pose.copy()  # Store for visualization
         return final_pose
 
-    def read_hand_state_joint(self, base_pose_joint: np.ndarray) -> np.ndarray:
+    def read_hand_state_joint(self, base_pose_joint: np.ndarray, safe_range: Optional[dict[str, tuple[float, float]]] = None) -> np.ndarray:
         """
         Compute the current absolute joint configuration by using a joint-space base pose
         and applying the relative hand motion as a delta in cartesian space.
@@ -279,6 +279,10 @@ class HandTracker:
 
         # Apply relative hand motion
         final_gripper_pose = self.read_hand_state(base_gripper_pose)
+
+        if safe_range:
+            # ensure safe range to pose output so we don't break the arm
+            final_gripper_pose.clip(safe_range)
 
         # Compute new arm joint configuration from IK
         new_arm_joints = self.robot_kin.ik(arm_joints.copy(), final_gripper_pose.to_matrix())

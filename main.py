@@ -11,6 +11,12 @@ from hand_teleop.hand_pose.factory import ModelName
 from hand_teleop.kinematics.robot_visualisation import RobotVisualisation
 from hand_teleop.tracking.tracker import HandTracker
 
+SAFE_RANGE = {
+    "x": (0.13, 0.36),
+    "y": (-0.23, 0.23),
+    "z": (0.008, 0.25),
+    "g": (3, 80),
+}
 
 # --------------------------------------------------------------------- #
 def make_target_transform(pos: np.ndarray, rot: np.ndarray) -> np.ndarray:
@@ -51,7 +57,7 @@ def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor"):
 
         try:
             if test_joint:
-                q = tracker.read_hand_state_joint(follower_joint)
+                q = tracker.read_hand_state_joint(follower_joint,safe_range=SAFE_RANGE)
             else:
                 pose = tracker.read_hand_state(follower_pose)
         except RuntimeError as e:

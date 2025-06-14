@@ -65,7 +65,7 @@ class GripperPose:
         """Returns a deep copy of the pose and keypoints."""
         return GripperPose(self.pos.copy(), self.rot.copy(), self.open_degree, [pt.copy() for pt in self._keypoints])
 
-    def clip_(self, safe_range: dict[str, tuple[float, float]]) -> None:
+    def clip(self, safe_range: dict[str, tuple[float, float]]) -> None:
         """In-place clipping of position and gripper open degree based on safe_range dict."""
         self.pos = np.array([np.clip(v, *safe_range[k]) for v, k in zip(self.pos, "xyz", strict=False)], dtype=np.float32)
         self.open_degree = float(np.clip(self.open_degree, *safe_range["g"]))
