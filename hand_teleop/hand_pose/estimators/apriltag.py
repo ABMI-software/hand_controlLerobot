@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Dict, List, Tuple
 
 import cv2
@@ -37,71 +38,91 @@ def draw_coloured_cube_pose(frame,
     fc = centre - fwd * h         # front-face centre
     bc = centre + fwd * h         # back-face centre
 
-    # 8 corners in fixed order
+    # eight 3-D corners
     C = [
-        fc + left * h + up * h,    # 0
-        fc - left * h + up * h,    # 1
-        fc - left * h - up * h,    # 2
-        fc + left * h - up * h,    # 3
-        bc + left * h + up * h,    # 4
-        bc - left * h + up * h,    # 5
-        bc - left * h - up * h,    # 6
-        bc + left * h - up * h,    # 7
+        fc + left * h + up * h,  # 0
+        fc - left * h + up * h,  # 1
+        fc - left * h - up * h,  # 2
+        fc + left * h - up * h,  # 3
+        bc + left * h + up * h,  # 4
+        bc - left * h + up * h,  # 5
+        bc - left * h - up * h,  # 6
+        bc + left * h - up * h,  # 7
     ]
     pts = [_proj(p, fx, fy, cx, cy) for p in C]
 
     # faces (CCW order when viewed from outside)
     faces = [
-        (0, 1, 2, 3),   # front
-        (7, 6, 5, 4),   # back
-        (3, 7, 4, 0),   # left (orange) - reversed
-        (1, 5, 6, 2),   # right (red)
-        (0, 4, 5, 1),   # top (green)
-        (2, 6, 7, 3),   # bottom (blue)  - reversed
+        (0, 1, 2, 3), (7, 6, 5, 4), (3, 7, 4, 0),
+        (1, 5, 6, 2), (0, 4, 5, 1), (2, 6, 7, 3),
     ]
-
     colours = [
-        (255, 255, 255),  # white
-        (  0, 255, 255),  # yellow
-        (  0, 128, 255),  # orange
-        (  0,   0, 255),  # red
-        (  0, 255,   0),  # green
-        (255,   0,   0),  # blue
+        (255,255,255), (0,255,255), (0,128,255),
+        (0,0,255), (0,255,0), (255,0,0),
     ]
 
     overlay = frame.copy()
-
-    for idx, (f, col) in enumerate(zip(faces, colours)):
+    for f, col in zip(faces, colours):
         a, b, c = C[f[0]], C[f[1]], C[f[2]]
         normal  = np.cross(b - a, c - a)
         face_center = sum(C[i] for i in f) / 4
         view_vec = face_center / np.linalg.norm(face_center)
-
-        if np.dot(normal, view_vec) >= 0:
+        if np.dot(normal, view_vec) >= 0:     # back-face, skip
             continue
 
-        # fill visible face on overlay
         poly = np.array([pts[i] for i in f], np.int32)
         cv2.fillConvexPoly(overlay, poly, col)
-
-        # outline that same face
         for i in range(4):
-            cv2.line(overlay, pts[f[i]], pts[f[(i + 1) % 4]], (0, 0, 0), thick)
+            cv2.line(overlay, pts[f[i]], pts[f[(i+1)%4]], (0,0,0), thick)
 
-    # blend overlay back
-    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+    cv2.addWeighted(overlay, alpha, frame, 1-alpha, 0, frame)
 
 
-def draw_axes(frame, centre, fwd, left, up, fx, fy, cx, cy, scale=0.05, thick=2):
-    for v, col in [(fwd, (0,0,255)), (up, (0,255,0)), (left, (255,0,0))]:
-        start = np.array([fx * centre[0] / centre[2] + cx,
-                          fy * centre[1] / centre[2] + cy]).astype(int)
-        end3d = centre + v * scale
-        end   = np.array([fx * end3d[0] / end3d[2] + cx,
-                          fy * end3d[1] / end3d[2] + cy]).astype(int)
-        cv2.line(frame, tuple(start.tolist()), tuple(end.tolist()), col, thick)
+def draw_axes(frame, centre, fwd, left, up, fx, fy, cx, cy,
+              scale=0.05, thick=2):
+    for v, col in [(fwd,(0,0,255)), (up,(0,255,0)), (left,(255,0,0))]:
+        start = np.array([fx*centre[0]/centre[2]+cx,
+                          fy*centre[1]/centre[2]+cy]).astype(int)
+        end3d = centre + v*scale
+        end   = np.array([fx*end3d[0]/end3d[2]+cx,
+                          fy*end3d[1]/end3d[2]+cy]).astype(int)
+        cv2.line(frame, tuple(start), tuple(end), col, thick)
 
-# ─── Estimator class ──────────────────────────────────────────────────────
+def draw_hand_keypoints(frame, hand_preds, fx, fy, cx, cy,
+                        radius=4, colour=(255, 0, 255)):
+    """Draw every 3-D key-point as a little magenta dot.
+
+    The model internally uses a flipped coordinate system (negated x and y),
+    so we unflip the points here for correct visualization in image space.
+    """
+    for pred in hand_preds:
+        for pt3 in pred.keypoints.__dict__.values():
+            pt3_unflipped = AprilTagCubeEstimator._unflip(pt3)
+            u, v = _proj(pt3_unflipped, fx, fy, cx, cy)
+            cv2.circle(frame, (u, v), radius, colour, -1)
+
+def annotate_frame(frame, poses, tag_dets, hand_preds, cam_p):
+    """
+    Single entry-point for *all* visual debug: cubes, axes, tag outlines,
+    and the new key-points.
+    """
+    fx, fy, cx, cy = cam_p
+
+    for cube, det in tag_dets.items():
+        centre, fwd, left, up = poses[cube]
+        draw_coloured_cube_pose(frame, centre, fwd, left, up, fx, fy, cx, cy)
+        draw_axes(frame, centre, fwd, left, up, fx, fy, cx, cy)
+
+        # tag outline (optional)
+        pts = det.corners.astype(int)
+        for i in range(4):
+            cv2.line(frame, pts[i], pts[(i+1)%4], (0,255,0), 1)
+        cv2.putText(frame, str(det.tag_id), tuple(det.center.astype(int)),
+                    cv2.FONT_HERSHEY_SIMPLEX, .5, (255,0,0), 1)
+
+    draw_hand_keypoints(frame, hand_preds, fx, fy, cx, cy)
+
+# ─── Estimator class (unchanged) ──────────────────────────────────────────
 class AprilTagCubeEstimator(HandPoseEstimator):
     _TH_OFFS = -0.02
 
@@ -113,7 +134,7 @@ class AprilTagCubeEstimator(HandPoseEstimator):
 
         self._det = Detector(
             families      = kw.get("families", "tag25h9"),
-            nthreads      = kw.get("n_threads", 1),
+            nthreads      = kw.get("n_threads", 4),
             quad_decimate = kw.get("quad_decimate", 1.0),
             quad_sigma    = kw.get("quad_sigma", 0.0)
         )
@@ -145,23 +166,24 @@ class AprilTagCubeEstimator(HandPoseEstimator):
 
         fwd, left, up = [v / np.linalg.norm(v) for v in (fwd, left, up)]
 
-        # Use same offset as if tag was on face 0 (front)
-        offset = -z / np.linalg.norm(z)  # face 0's fwd
+        # **same maths as your original**
+        offset = -z / np.linalg.norm(z)       # i.e. face-0 fwd
         centre = t + offset * (-_CUBE_SIZE * 0.5 + extra_fwd)
 
         return centre, fwd, left, up
 
-    def _unflip(self, p): q = p.copy(); q[0] *= -1; return q
+    @staticmethod
+    def _unflip(p): return p.copy() * [-1, -1, 1]
 
-    def detect_cubes(self, frame_rgb: np.ndarray, focal: float, 
-                 use_thumb_offset: bool = True
-                 ) -> Tuple[Dict[str, Tuple[np.ndarray, ...]],
-                            Dict[str, any],
-                            np.ndarray]:
-        gray      = preprocess(cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2GRAY))
-        h, w      = gray.shape
-        cam_p     = (focal, focal, w * .5, h * .5)
-        dets      = self._det.detect(gray, True, camera_params=cam_p, tag_size=_TAG_SIZE)
+    def detect_cubes(self, frame_rgb: np.ndarray, focal: float,
+                     use_thumb_offset: bool = True
+                     ) -> Tuple[Dict[str,Tuple[np.ndarray,...]],
+                                Dict[str,any], np.ndarray]:
+        gray  = preprocess(cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2GRAY))
+        h, w  = gray.shape
+        cam_p = (focal, focal, w*.5, h*.5)
+        dets  = self._det.detect(gray, True, camera_params=cam_p,
+                                 tag_size=_TAG_SIZE)
 
         best = {}
         for d in dets:
@@ -172,7 +194,7 @@ class AprilTagCubeEstimator(HandPoseEstimator):
         poses = {}
         for cube in ("index", "thumb"):
             if cube in best:
-                off = self._TH_OFFS if cube == "thumb" and use_thumb_offset else 0.0
+                off = self._TH_OFFS if cube=="thumb" and use_thumb_offset else 0.0
                 poses[cube] = self._make_pose(best[cube], off)
                 self._prev_pose[cube] = poses[cube]
             else:
@@ -209,32 +231,30 @@ class AprilTagCubeEstimator(HandPoseEstimator):
 
 # ─── Live viewer ──────────────────────────────────────────────────────────
 def main(cam_idx=0, quad_decimate=1.0, quad_sigma=0.0):
-    cap = cv2.VideoCapture(cam_idx)
-    est = AprilTagCubeEstimator(quad_decimate=quad_decimate, quad_sigma=quad_sigma)
+    print("starting video capture")
+    cap = cv2.VideoCapture(cam_idx, cv2.CAP_DSHOW)
+    est = AprilTagCubeEstimator(quad_decimate=quad_decimate,
+                                quad_sigma=quad_sigma)
 
+    focal = 448
     while True:
         ok, frame = cap.read()
         if not ok:
             break
 
-        poses, tags, _ = est.detect_cubes(frame, focal=448, use_thumb_offset=False)
+        poses, tags, _ = est.detect_cubes(frame, focal, use_thumb_offset=False)
+
+        # I unfortunately decided to flip the frame vertically in the main tracking so test it properly I have to flip it here too ;(
+        frame_flipped = cv2.flip(frame, 1) 
+        hand_preds     = est(frame_flipped, focal)           # key-points
+
         h, w = frame.shape[:2]
-        cam_p = (448, 448, w * .5, h * .5)
+        cam_p = (focal, focal, w*.5, h*.5)
 
-        for cube, det in tags.items():
-            centre, fwd, left, up = poses[cube]
-            draw_coloured_cube_pose(frame, centre, fwd, left, up, *cam_p)
-            draw_axes(frame, centre, fwd, left, up, *cam_p)
-
-            # optional: draw tag outline
-            pts = det.corners.astype(int)
-            for i in range(4):
-                cv2.line(frame, pts[i], pts[(i + 1) % 4], (0, 255, 0), 1)
-            cv2.putText(frame, str(det.tag_id), tuple(det.center.astype(int)),
-                        cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 0, 0), 1)
+        annotate_frame(frame, poses, tags, hand_preds, cam_p)
 
         cv2.imshow("AprilTag Cubes", frame)
-        if cv2.waitKey(1) & 0xFF == 27:
+        if cv2.waitKey(1) & 0xFF == 27:             # Esc quits
             break
 
     cap.release()

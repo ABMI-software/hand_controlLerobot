@@ -283,7 +283,7 @@ class HandTracker:
             final_gripper_pose.clip(safe_range)
 
         # Inverse kinematics returns radians
-        new_arm_joints_rad = self.robot_kin.ik(arm_joints_rad.copy(), final_gripper_pose.to_matrix())
+        new_arm_joints_rad = self.robot_kin.ik(arm_joints_rad.copy(), final_gripper_pose.to_matrix(),max_iters=10)
 
         # Convert result back to degrees
         new_arm_joints_deg = np.degrees(new_arm_joints_rad)

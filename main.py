@@ -27,9 +27,9 @@ def make_target_transform(pos: np.ndarray, rot: np.ndarray) -> np.ndarray:
     return T
 
 
-def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor"):
+def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor", cam_idx=0):
     urdf_path = "so100" if test_joint else None
-    tracker = HandTracker(cam_idx=1, hand="right", model=model, urdf_path=urdf_path)
+    tracker = HandTracker(cam_idx=cam_idx, hand="right", model=model, urdf_path=urdf_path)
 
     # --- follower pose in SE(3) ------------------------------------------------
     follower_pos = np.array([0.2, 0, 0.1])
@@ -101,8 +101,9 @@ if __name__ == "__main__":
     parser.add_argument("--no-joint", dest="test_joint", action="store_false",
                         help="Use pose-space tracker instead of joint-space")
     parser.add_argument("--model", type=str, default="wilor", help="Hand tracking model to use")
+    parser.add_argument("--cam-idx", type=int, default=0, help="Camera index to use")
 
     parser.set_defaults(test_joint=True)
     args = parser.parse_args()
 
-    main(quiet=args.quiet, fps=args.fps, test_joint=args.test_joint,  model=args.model)
+    main(quiet=args.quiet, fps=args.fps, test_joint=args.test_joint, model=args.model, cam_idx=args.cam_idx)

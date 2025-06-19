@@ -131,6 +131,7 @@ python main.py
 * `--fps 30` — Frame rate (default: 60)
 * `--quiet` — Silence console output
 * `--no-joint` — Output raw gripper pose
+* `--cam-idx` — Change camera index used for the tracking
 
 ---
 
