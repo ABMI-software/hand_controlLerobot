@@ -40,12 +40,15 @@ class HandTracker:
         urdf_path: Optional[str] = None,
         frame_name: str = "gripper_link",
         use_scroll: bool = False,
-        scroll_scale: float = 0.02,
+        scroll_scale: float = -0.08,
+        safe_range: Optional[dict[str, tuple[float, float]]] = None,
+        debug_mode: bool = False,
     ):
         # --- user options / visuals
         self.focal_ratio = focal_ratio
         self.show_viz = show_viz
         self.cam_t = cam_t
+        self.debug_mode = debug_mode
 
         # --- webcam
         self.cap = cv2.VideoCapture(cam_idx)
@@ -68,6 +71,8 @@ class HandTracker:
             if urdf_path is not None
             else None
         )
+
+        self.safe_range = safe_range
 
         # --- scroll-wheel state --------------------------------------
         self.use_scroll = use_scroll
@@ -250,7 +255,6 @@ class HandTracker:
         rel = self.predict_pose()
         if self.base_pose is None:
             self.base_pose = base_pose.copy()
-        rel.open_degree += self.base_pose.open_degree
 
         final_pose = self.base_pose.copy()
         final_pose.transform_pose(rel.rot, rel.pos)
@@ -258,7 +262,7 @@ class HandTracker:
         self._last_final_pose = final_pose.copy()  # Store for visualization
         return final_pose
 
-    def read_hand_state_joint(self, base_pose_joint: np.ndarray, safe_range: Optional[dict[str, tuple[float, float]]] = None) -> np.ndarray:
+    def read_hand_state_joint(self, base_pose_joint: np.ndarray) -> np.ndarray:
         """
         Compute the current absolute joint configuration by using a joint-space base pose
         and applying the relative hand motion as a delta in cartesian space.
@@ -279,14 +283,18 @@ class HandTracker:
         # Apply relative hand motion
         final_gripper_pose = self.read_hand_state(base_gripper_pose)
 
-        if safe_range:
-            final_gripper_pose.clip(safe_range)
+        if self.safe_range:
+            final_gripper_pose.clip(self.safe_range)
+
 
         # Inverse kinematics returns radians
-        new_arm_joints_rad = self.robot_kin.ik(arm_joints_rad.copy(), final_gripper_pose.to_matrix(),max_iters=10)
+        new_arm_joints_rad = self.robot_kin.ik(arm_joints_rad.copy(), final_gripper_pose.to_matrix(),max_iters=6)
 
         # Convert result back to degrees
         new_arm_joints_deg = np.degrees(new_arm_joints_rad)
+
+        if self.debug_mode:
+            print("Pose:", final_gripper_pose.to_string())
 
         return np.append(new_arm_joints_deg, final_gripper_pose.open_degree).astype(np.float32)
 

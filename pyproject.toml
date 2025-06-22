@@ -18,7 +18,7 @@ mediapipe = { version = "*", optional = true }
 wilor-mini = { git = "https://github.com/Joeclinton1/WiLoR-mini", optional = true }
 
 [tool.poetry.extras]
-wilor = ["wilor-mini", "ultralytics"]
+wilor = ["wilor-mini"]
 mediapipe = ["mediapipe"]
 
 [tool.poetry.group.dev.dependencies]

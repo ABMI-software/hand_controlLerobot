@@ -1,4 +1,4 @@
-# ruff: noqa: N803 N806 
+# ruff: noqa: N803 N806
 from typing import Optional
 
 import numpy as np
@@ -22,7 +22,7 @@ class GripperPose:
             rot=np.eye(3, dtype=np.float32),
             open_degree=0.0
         )
-    
+
     @staticmethod
     def from_matrix(T: np.ndarray, open_degree: float = 0.0, keypoints: Optional[list[np.ndarray]] = None) -> 'GripperPose':
         """Creates a GripperPose from a 4x4 transformation matrix."""
@@ -38,11 +38,20 @@ class GripperPose:
         T[:3, 3] = self.pos
         return T
 
+    def to_string(self) -> str:
+        """Returns a concise, colorized string with position, Euler angles, and open degree."""
+        def color(text, code): return f"\033[{code}m{text}\033[0m"
+
+        pos_str = color("Pos:", "36") + " (" + ", ".join(f"{x:.2f}" for x in self.pos) + ")"
+        euler_str = color("Euler:", "35") + " (" + ", ".join(f"{x:.1f}" for x in self.rot_euler) + ")"
+        grip_str = color("Grip:", "33") + f" {self.open_degree:.1f}"
+        return f"{pos_str}, {euler_str}, {grip_str}"
+
     @property
     def rot_euler(self) -> np.ndarray:
         """Returns orientation as intrinsic Euler angles (Z→Y→X), [roll, pitch, yaw] order."""
         return np.degrees(Rotation.from_matrix(self.rot).as_euler("ZYX")[::-1])
-    
+
     @property
     def is_rh(self) -> bool:
         """Returns True if the rotation matrix represents a right-handed coordinate system."""
@@ -69,7 +78,7 @@ class GripperPose:
         """In-place clipping of position and gripper open degree based on safe_range dict."""
         self.pos = np.array([np.clip(v, *safe_range[k]) for v, k in zip(self.pos, "xyz", strict=False)], dtype=np.float32)
         self.open_degree = float(np.clip(self.open_degree, *safe_range["g"]))
-        
+
     def _apply_op(self, p_fn, r_fn):
         """Apply a position and rotation operation to pose and keypoints."""
         self.pos = p_fn(self.pos)
@@ -80,7 +89,7 @@ class GripperPose:
         """Actively apply rotation R and translation t to the pose and keypoints."""
         self._apply_op(lambda p: p + t, lambda r: R @ r)
 
-    def inverse_transform_pose(self, R, t): 
+    def inverse_transform_pose(self, R, t):
         """Undo an active transform defined by rotation R and translation t.
         Equivalently this gives the transformation to go from initial to the current one.
         """
@@ -93,7 +102,3 @@ class GripperPose:
     def revert_basis(self, R, t):
         """Revert a previously-applied change of coordinate frame (basis)."""
         self._apply_op(lambda p: R @ p + t, lambda r: R @ r @ R.T)
-         
-
-
-    

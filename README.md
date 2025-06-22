@@ -56,6 +56,14 @@ cd hand-teleop
 pip install -e ".[wilor]"
 ```
 
+> ⚠️ **Important:** If you're using `hand-teleop` alongside [LeRobot](https://github.com/huggingface/lerobot), it uses `opencv-python-headless`, which **breaks GUI functions** like `cv2.imshow()`.
+>
+> To fix this:
+>
+> ```bash
+> pip uninstall opencv-python-headless opencv-python opencv-contrib-python
+> pip install opencv-python
+> ```
 ---
 
 ### Optional (for forward/inverse kinematics)
@@ -123,15 +131,17 @@ while True:
 
 ```bash
 python main.py
-```
+````
 
 ### Command-line options
 
 * `--model wilor` — Hand model to use
 * `--fps 30` — Frame rate (default: 60)
 * `--quiet` — Silence console output
-* `--no-joint` — Output raw gripper pose
-* `--cam-idx` — Change camera index used for the tracking
+* `--no-joint` — Output raw gripper pose (pose-space mode)
+* `--cam-idx 1` — Change camera index used for the tracking
+* `--hand left` — Choose which hand to track (`left` or `right`, default: `right`)
+* `--use-scroll` — Enable scroll-based gripper control
 
 ---
 
