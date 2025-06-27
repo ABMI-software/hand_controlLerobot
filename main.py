@@ -36,6 +36,7 @@ def main(quiet=False, fps=60, test_joint=True, model: ModelName = "wilor", cam_i
         urdf_path=urdf_path,
         safe_range=SAFE_RANGE,
         use_scroll=use_scroll,
+        kf_dt=1/fps
     )
 
     # --- follower pose in SE(3) ------------------------------------------------

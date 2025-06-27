@@ -24,6 +24,8 @@ from hand_teleop.kinematics.kinematics import RobotKinematics
 from hand_teleop.tracking.kalman_filter import KalmanXYZ
 
 DEFAULT_CAM_T = np.array([0, -0.24, 0.6], dtype=np.float32)
+
+
 class HandTracker:
     # ------------------------------------------------------------------
     # Init
@@ -43,6 +45,9 @@ class HandTracker:
         scroll_scale: float = -0.08,
         safe_range: Optional[dict[str, tuple[float, float]]] = None,
         debug_mode: bool = False,
+        kf_dt: float = 1 / 30,
+        kf_q: float = 5e-3,
+        kf_r: float = 5e-3,
     ):
         # --- user options / visuals
         self.focal_ratio = focal_ratio
@@ -54,9 +59,9 @@ class HandTracker:
         self.cap = cv2.VideoCapture(cam_idx)
 
         # --- cross-thread state ------------------------------------------------
-        self.kf = KalmanXYZ()
-        self._kf_t = time.perf_counter()           # single shared timestamp
-        self.prev_rel_pose = GripperPose.zero()    # last *relative* pose (for rot / grip)
+        self.kf = KalmanXYZ(dt=kf_dt, q=kf_q, r=kf_r)
+        self._kf_t = time.perf_counter()  # single shared timestamp
+        self.prev_rel_pose = GripperPose.zero()  # last *relative* pose (for rot / grip)
         self.base_pose: Optional[GripperPose] = None
         self._last_final_pose: Optional[GripperPose] = None
         self._lock = threading.Lock()
@@ -73,21 +78,22 @@ class HandTracker:
         )
 
         self.safe_range = safe_range
+        self._max_jump_rate = 1  # metres per second you’ll allow
 
         # --- scroll-wheel state --------------------------------------
         self.use_scroll = use_scroll
         self.scroll_scale = scroll_scale
-        self._scroll_open = 0.0            # range [0, 90]
+        self._scroll_open = 0.0  # range [0, 90]
 
         # --- controls
         self.tracking_paused = True
-        listener = keyboard.Listener(on_press=self._on_press, on_release=self._on_release)
+        listener = keyboard.Listener(
+            on_press=self._on_press, on_release=self._on_release
+        )
         listener.start()
 
-        if self.use_scroll:                           # NEW
-            self._scroll_listener = mouse.Listener(
-                on_scroll=self._on_scroll
-            )
+        if self.use_scroll:  # NEW
+            self._scroll_listener = mouse.Listener(on_scroll=self._on_scroll)
             self._scroll_listener.start()
 
         # --- background loop
@@ -116,6 +122,10 @@ class HandTracker:
 
             frame = cv2.flip(frame, 1)
 
+            now = time.perf_counter()
+            dt = now - self._kf_t if not self.tracking_paused else 0.0   # seconds
+            # (leave self._kf_t unchanged for now)
+
             rel_pose = None
             if not self.tracking_paused:
                 rel_pose = self.pose_computer.compute_relative_pose(
@@ -123,6 +133,19 @@ class HandTracker:
                     self.focal_ratio * frame.shape[1],
                     self.cam_t,
                 )
+
+                if rel_pose is not None:
+                    jump = np.linalg.norm(rel_pose.pos - self.prev_rel_pose.pos)
+
+                    max_jump = self._max_jump_rate * max(dt, 1e-4)  # avoid zero
+                    if jump > max_jump:
+                        direction = rel_pose.pos - self.prev_rel_pose.pos
+                        rel_pose.pos = self.prev_rel_pose.pos + direction / jump * max_jump
+                        if self.debug_mode:
+                            print(
+                                f"[WARN] Pose jump {jump:.3f} m capped to {max_jump:.3f} m "
+                                f"(dt={dt:.3f}s)"
+                            )
 
             # ------------------------------------------------------------------
             # Kalman: predict-update only when we have a measurement
@@ -270,7 +293,9 @@ class HandTracker:
         Expects and returns a 6-element array in degrees: [j1, j2, j3, j4, j5, gripper_open].
         """
         if self.robot_kin is None:
-            raise RuntimeError("robot_kin is not initialized. Pass a URDF to use this function.")
+            raise RuntimeError(
+                "robot_kin is not initialized. Pass a URDF to use this function."
+            )
 
         # Convert base joint angles to radians for kinematics
         arm_joints_rad = np.radians(base_pose_joint[:5])
@@ -286,9 +311,10 @@ class HandTracker:
         if self.safe_range:
             final_gripper_pose.clip(self.safe_range)
 
-
         # Inverse kinematics returns radians
-        new_arm_joints_rad = self.robot_kin.ik(arm_joints_rad.copy(), final_gripper_pose.to_matrix(),max_iters=6)
+        new_arm_joints_rad = self.robot_kin.ik(
+            arm_joints_rad.copy(), final_gripper_pose.to_matrix(), max_iters=6
+        )
 
         # Convert result back to degrees
         new_arm_joints_deg = np.degrees(new_arm_joints_rad)
@@ -296,7 +322,9 @@ class HandTracker:
         if self.debug_mode:
             print("Pose:", final_gripper_pose.to_string())
 
-        return np.append(new_arm_joints_deg, final_gripper_pose.open_degree).astype(np.float32)
+        return np.append(new_arm_joints_deg, final_gripper_pose.open_degree).astype(
+            np.float32
+        )
 
     # ------------------------------------------------------------------
     # Cleanup helper (optional)

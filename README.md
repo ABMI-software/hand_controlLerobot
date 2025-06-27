@@ -1,7 +1,3 @@
-Absolutely. Here’s the updated version with that note added clearly but concisely:
-
----
-
 # hand-teleop
 
 **hand-teleop** turns your webcam into real-time robot joint positions — no servers, just pure Python.
