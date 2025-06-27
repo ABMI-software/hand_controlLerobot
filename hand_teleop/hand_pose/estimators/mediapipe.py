@@ -1,6 +1,6 @@
+import os
 from typing import List, Optional
 
-import cv2
 import mediapipe as mp
 import numpy as np
 from mediapipe.tasks.python import vision
@@ -19,8 +19,8 @@ class MediaPipeEstimator(HandPoseEstimator):
 
     def __init__(
         self,
-        device: Optional[str] = None, 
-        model_path: str = "hand_teleop/hand_pose/estimators/gesture_recognizer.task",
+        device: Optional[str] = None,
+        model_path: str = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task"),
         num_hands: int = 1,
     ):
         BaseOptions = mp.tasks.BaseOptions
