@@ -72,25 +72,36 @@ class GripperPoseVisualizer:
         cv2.putText(im, f"{open_degree:.1f} deg", tuple(pos_2d + [10, 30]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
         return im
 
+    def draw_gripper_keypoints(self, im: np.ndarray, keypoints: list[np.ndarray]) -> np.ndarray:
+        points_2d = self._project_points_3d_to_2d(np.stack(keypoints), im.shape[:2])
+        for pt in points_2d:
+            cv2.circle(im, tuple(pt), 5, (0, 255, 255), -1)
+        return im
+
     def draw_all(
         self,
         frame: np.ndarray,
         pose_raw: GripperPose,
         pose_final: GripperPose,
+        keypoints_only: bool = False,
     ) -> np.ndarray:
 
         # for visualizing the points position we just want to revert the basis back to the screen
         pose_screen = pose_raw.copy()
         pose_screen.revert_basis(self.robot_axes_in_screen, self.cam_t)
 
+        self.focal_length = self.focal_ratio * frame.shape[1]
+
+        if keypoints_only:
+            return self.draw_gripper_keypoints(frame, pose_screen._keypoints)
+
         # Pose_final is the hand rotation in the robot local frame but with forward vector starting at the hand world frame forward
         # if we visualise this then when the hand points forwards, the axes match the hand axes rather than robot axes
         # inorder to see what the robot axes look like we need to apply the robot axes transformation to the final pose
         pose_applied = pose_final.copy()
-        pose_applied.transform_pose(self.robot_axes_in_screen,np.array([0,0,0]))
+        pose_applied.transform_pose(self.robot_axes_in_screen, np.array([0, 0, 0]))
 
         # draw all visualisations to frame
-        self.focal_length = self.focal_ratio * frame.shape[1]
         frame = self.draw_gripper_axes(frame, pose_screen.pos, pose_applied.rot)
         frame = self.draw_gripper_vectors(frame, *pose_screen._keypoints)
         frame = self.draw_gripper_info_text(frame, pose_screen.pos, pose_final)

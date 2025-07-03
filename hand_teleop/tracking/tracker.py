@@ -78,7 +78,7 @@ class HandTracker:
         )
 
         self.safe_range = safe_range
-        self._max_jump_rate = 1  # metres per second you’ll allow
+        self._max_jump_rate = 2  # metres per second you’ll allow
 
         # --- scroll-wheel state --------------------------------------
         self.use_scroll = use_scroll
@@ -91,6 +91,7 @@ class HandTracker:
             on_press=self._on_press, on_release=self._on_release
         )
         listener.start()
+        self.keypoints_only_mode = False
 
         if self.use_scroll:  # NEW
             self._scroll_listener = mouse.Listener(on_scroll=self._on_scroll)
@@ -174,6 +175,7 @@ class HandTracker:
                         frame,
                         self.pose_computer.raw_abs_pose,
                         self._last_final_pose,
+                        keypoints_only=self.keypoints_only_mode
                     )
 
                 # --- Draw EMA FPS in top left ---
@@ -212,7 +214,9 @@ class HandTracker:
         if key == keyboard.Key.space:
             self._pause()
         elif key == keyboard.KeyCode.from_char("p"):
-            self._toggle()
+            self._resume() if self.tracking_paused else self._pause()
+        elif key == keyboard.KeyCode.from_char("k"):
+            self.keypoints_only_mode = not self.keypoints_only_mode
 
     def _on_release(self, key):
         if key == keyboard.Key.space:
@@ -231,9 +235,6 @@ class HandTracker:
             self.prev_rel_pose = GripperPose.zero()
         self.pose_computer.reset()
         self.base_pose = None
-
-    def _toggle(self):
-        self._resume() if self.tracking_paused else self._pause()
 
     def _on_scroll(self, x, y, dx, dy):
         # dy > 0  = scroll up  (open);  dy < 0 = scroll down (close)
