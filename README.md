@@ -17,6 +17,14 @@ Designed for [LeRobot](https://github.com/huggingface/lerobot), it runs fast, sm
 
 ## Installation
 
+### First Install the LeRobot fork!
+
+This project is compatible with LeRobot but requires some changes to the teleoperation code to work. I have created a fork which uses it that should work with this library
+
+https://github.com/Joeclinton1/lerobot/tree/hand_teleop
+
+My fork is outdated now, and I am working to get it working with the newest verison of LeRobot but they changed the joint configuration in a way that is currently breaking this project. [Link to work in progress fork](https://github.com/Joeclinton1/lerobot/tree/hand_teleop_new)
+
 ### ✅ Recommended (Wilor – GPU-based, CUDA required)
 
 ```bash
