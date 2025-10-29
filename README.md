@@ -38,28 +38,50 @@ Lerobot Control is an innovative teleoperation system that enables intuitive con
 - SO-101 robot hardware setup
 - USB connection to the robot
 
-### Steps
+### Installation Methods
+
+#### Using Conda (Recommended)
 1. Clone the repository:
    ```bash
    git clone https://github.com/ABMI-software/hand_controlLerobot.git
    cd hand_control
    ```
 
-2. Create and activate a Conda environment:
+2. Create and activate environment using provided file:
    ```bash
-   conda create -n lerobot python=3.10
-   conda activate lerobot
+   conda env create -f environment.yml
+   conda activate hand_control
    ```
 
-3. Install required packages:
+3. Install the package in development mode:
    ```bash
    pip install -e .
    ```
 
-4. Verify installation:
+#### Using pip
+1. Clone the repository:
    ```bash
-   python test_gripper_only.py
+   git clone https://github.com/ABMI-software/hand_controlLerobot.git
+   cd hand_control
    ```
+
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   pip install -e .
+   ```
+
+#### Verify Installation
+After installation, verify that everything is working:
+```bash
+python test_gripper_only.py
+```
 
 ### Hardware Setup
 1. Connect the SO-101 robot to your computer via USB
@@ -69,15 +91,30 @@ Lerobot Control is an innovative teleoperation system that enables intuitive con
 ## Usage
 
 ### Basic Operation
-1. Start the teleoperation system:
+1. Start only camera - hand tracking and pose estimation:
    ```bash
    python main.py
    ```
+2. Start teleoperation with lerobot and Arducam:
+   ```bash
+   python3 poke_motor.py --hand right --model wilor --cam-idx 0 --fps 30   --so101-enable --so101-port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AA9018150-if00   --invert-z --raw --raw-min 1700 --raw-max 3200  --verbose
+   ```
 
-2. Available control modes:
+3. Start teleoperation with lerobot and astra depth camera:
+   ```bash
+   python hand_teleop_local.py --hand right --model wilor --cam-idx -1 --fps 30   --so101-enable --so101-port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AA9018150-if00   --invert-z --raw --raw-min 1700 --raw-max 3200 --verbose --print-joints 
+   ```
+
+4. Available control modes:
    - **Direct Control**: Control robot joints directly with hand movements
    - **Task Space**: Control end-effector position in Cartesian space
    - **Gripper Control**: Use pinch gesture to control gripper
+
+
+5. to control wrist via mediapipe
+    '''bash
+    to be completed
+    '''
 
 ### Advanced Features
 - **Gesture Recording**: Save and replay common movement sequences

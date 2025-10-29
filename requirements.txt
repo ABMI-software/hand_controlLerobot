@@ -1,0 +1,22 @@
+# Core dependencies
+numpy>=1.23.0
+opencv-python>=4.8.0
+matplotlib>=3.7.0
+scipy>=1.10.0
+pydantic>=1.10.0,<2.0.0
+pynput>=1.7.0
+
+# Hand tracking models
+mediapipe>=0.10.0  # For MediaPipe hand tracking
+wilor-mini @ git+https://github.com/Joeclinton1/WiLoR-mini  # For WiLoR hand tracking
+
+# Robot control
+lerobot>=0.1.0  # For SO101 robot control
+
+# Development tools
+pytest>=7.0.0
+ruff>=0.1.0  # For linting
+poetry>=1.6.0  # For dependency management
+
+# Specified Python version
+# Python 3.10.* is required
