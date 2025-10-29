@@ -1,30 +1,129 @@
 # Lerobot Control
 
+[![License](https://img.shields.io/github/license/ABMI-software/hand_controlLerobot)](LICENSE)
+[![Python Version](https://img.shields.io/badge/python-3.6%2B-blue)](https://www.python.org/downloads/)
+
 ## Overview
-Lerobot Control is a teleoperation system for controlling the SO-101 robot using hand gestures detected via a webcam. The project allows real-time control of the robot's joints and gripper based on the user's hand movements.
+Lerobot Control is an innovative teleoperation system that enables intuitive control of the SO-101 robot through natural hand gestures captured via webcam. This project bridges the gap between human motion and robotic control, offering a seamless interface for manipulating robot joints and gripper in real-time.
+
+### Key Benefits
+- 🎯 Intuitive Control: Natural hand movements translate directly to robot actions
+- ⚡ Real-time Response: Minimal latency between gesture recognition and robot movement
+- 🔄 Flexible Tracking: Multiple tracking models available for different use cases
+- 🛠 Customizable: Adjustable sensitivity and control parameters
 
 ## Table of Contents
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Features
-- Real-time hand tracking and gesture recognition.
-- Control of robot joints and gripper.
-- Support for multiple tracking models (Wilor, MediaPipe).
-- Adjustable parameters for sensitivity and control.
+- Real-time hand tracking and gesture recognition
+- Control of robot joints and gripper
+- Support for multiple tracking models (Wilor, MediaPipe)
+- Adjustable parameters for sensitivity and control
+- Safety limits and emergency stops
+- Gesture recording and playback capabilities
 
 ## Installation
 
 ### Prerequisites
 - Python 3.6 or higher
 - Conda (recommended for managing dependencies)
+- Webcam with minimum 720p resolution
+- SO-101 robot hardware setup
+- USB connection to the robot
 
 ### Steps
 1. Clone the repository:
    ```bash
    git clone https://github.com/ABMI-software/hand_controlLerobot.git
    cd hand_control
+   ```
+
+2. Create and activate a Conda environment:
+   ```bash
+   conda create -n lerobot python=3.10
+   conda activate lerobot
+   ```
+
+3. Install required packages:
+   ```bash
+   pip install -e .
+   ```
+
+4. Verify installation:
+   ```bash
+   python test_gripper_only.py
+   ```
+
+### Hardware Setup
+1. Connect the SO-101 robot to your computer via USB
+2. Ensure the webcam is properly connected and recognized
+3. Position the webcam with a clear view of the control area
+
+## Usage
+
+### Basic Operation
+1. Start the teleoperation system:
+   ```bash
+   python main.py
+   ```
+
+2. Available control modes:
+   - **Direct Control**: Control robot joints directly with hand movements
+   - **Task Space**: Control end-effector position in Cartesian space
+   - **Gripper Control**: Use pinch gesture to control gripper
+
+### Advanced Features
+- **Gesture Recording**: Save and replay common movement sequences
+- **Safety Limits**: Built-in joint and velocity limits
+- **Multiple Tracking Models**: Switch between different hand tracking models
+
+## Configuration
+
+### Tracking Settings
+```bash
+# Select tracking model (options: mediapipe, wilor)
+python main.py --tracker mediapipe
+
+# Adjust tracking sensitivity
+python main.py --sensitivity 0.8
+```
+
+### Robot Settings
+- Joint speed limits can be configured in `config/robot_config.yaml`
+- Gesture mappings can be modified in `config/gesture_mapping.yaml`
+- Camera calibration settings in `config/camera_config.yaml`
+
+## Troubleshooting
+
+### Common Issues
+1. **Robot Not Detected**
+   - Check USB connection
+   - Verify correct port permissions
+   - Run `python scan_bus.py` to detect connected devices
+
+2. **Poor Tracking Performance**
+   - Ensure good lighting conditions
+   - Check webcam resolution settings
+   - Try different tracking models
+
+3. **Unexpected Robot Movement**
+   - Verify calibration settings
+   - Check gesture sensitivity settings
+   - Ensure clean background for better tracking
+
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
