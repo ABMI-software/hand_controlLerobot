@@ -25,9 +25,31 @@ A robot arm teleoperation system based on hand tracking via webcam. Lerobot Cont
 - Real-time hand tracking and gesture recognition
 - Control of robot joints and gripper
 - Support for multiple tracking models (Wilor, MediaPipe)
+- Object detection using YOLOv8 with Arducam
+- Dual camera system (Arducam + webcam)
+- Interactive mode selection (auto-pick/teleoperation)
 - Adjustable parameters for sensitivity and control
 - Safety limits and emergency stops
 - Gesture recording and playback capabilities
+
+## Project Structure
+```
+hand_control/
+├── hand_teleop/
+│   ├── cameras/                    # Camera handling
+│   │   ├── __init__.py
+│   │   └── camera_manager.py      # Multi-camera management
+│   ├── detection/                  # Object detection
+│   │   ├── __init__.py
+│   │   └── object_detector.py     # YOLOv8 implementation
+│   ├── gripper_pose/              # Gripper control
+│   ├── hand_pose/                 # Hand tracking
+│   ├── kinematics/                # Robot kinematics
+│   └── tracking/                  # Motion tracking
+├── config/                        # Configuration files
+├── scripts/                       # Utility scripts
+└── assets/                        # Project assets
+```
 
 ## Installation
 
@@ -35,8 +57,10 @@ A robot arm teleoperation system based on hand tracking via webcam. Lerobot Cont
 - Python 3.6 or higher
 - Conda (recommended for managing dependencies)
 - Webcam with minimum 720p resolution
+- Arducam camera for object detection
 - SO-101 robot hardware setup
 - USB connection to the robot
+- CUDA-capable GPU (recommended for YOLOv8)
 
 ### Installation Methods
 
@@ -91,19 +115,38 @@ python test_gripper_only.py
 ## Usage
 
 ### Basic Operation
-1. Start only camera - hand tracking and pose estimation:
+
+#### Hand Tracking Only
+1. Start camera - hand tracking and pose estimation:
    ```bash
    python main.py
    ```
+
+#### Robot Control
 2. Start teleoperation with lerobot and Arducam:
    ```bash
-   python3 poke_motor.py --hand right --model wilor --cam-idx 0 --fps 30   --so101-enable --so101-port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AA9018150-if00   --invert-z --raw --raw-min 1700 --raw-max 3200  --verbose
+   python3 poke_motor.py --hand right --model wilor --cam-idx 0 --fps 30 \
+          --so101-enable --so101-port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AA9018150-if00 \
+          --invert-z --raw --raw-min 1700 --raw-max 3200 --verbose
    ```
 
 3. Start teleoperation with lerobot and astra depth camera:
    ```bash
-   python hand_teleop_local.py --hand right --model wilor --cam-idx -1 --fps 30   --so101-enable --so101-port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AA9018150-if00   --invert-z --raw --raw-min 1700 --raw-max 3200 --verbose --print-joints 
+   python hand_teleop_local.py --hand right --model wilor --cam-idx -1 --fps 30 \
+          --so101-enable --so101-port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AA9018150-if00 \
+          --invert-z --raw --raw-min 1700 --raw-max 3200 --verbose --print-joints 
    ```
+
+#### Object Detection and Picking
+4. Start object detection and picking system:
+   ```bash
+   python pick_and_place.py
+   ```
+
+   Controls:
+   - Press 'a' to switch to auto-pick mode
+   - Press 't' to switch to teleoperation mode
+   - Press 'q' to quit
 
 4. Available control modes:
    - **Direct Control**: Control robot joints directly with hand movements
