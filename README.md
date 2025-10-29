@@ -1,10 +1,10 @@
-# Lerobot Control
+# Lerobot Controlled by hand
 
 [![License](https://img.shields.io/github/license/ABMI-software/hand_controlLerobot)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.6%2B-blue)](https://www.python.org/downloads/)
 
 ## Overview
-Lerobot Control is an innovative teleoperation system that enables intuitive control of the SO-101 robot through natural hand gestures captured via webcam. This project bridges the gap between human motion and robotic control, offering a seamless interface for manipulating robot joints and gripper in real-time.
+A robot arm teleoperation system based on hand tracking via webcam. Lerobot Control enables intuitive control of the SO-101 robot through natural hand gestures, bridging the gap between human motion and robotic control with a seamless real-time interface.
 
 ### Key Benefits
 - 🎯 Intuitive Control: Natural hand movements translate directly to robot actions
@@ -112,9 +112,9 @@ python test_gripper_only.py
 
 
 5. to control wrist via mediapipe
-    '''bash
+    ```bash
     to be completed
-    '''
+    ```
 
 ### Advanced Features
 - **Gesture Recording**: Save and replay common movement sequences
