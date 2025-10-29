@@ -13,6 +13,11 @@ wilor-mini @ git+https://github.com/Joeclinton1/WiLoR-mini  # For WiLoR hand tra
 # Robot control
 lerobot>=0.1.0  # For SO101 robot control
 
+# Object detection
+ultralytics>=8.0.0  # YOLOv8
+torch>=2.0.0
+torchvision>=0.15.0
+
 # Development tools
 pytest>=7.0.0
 ruff>=0.1.0  # For linting
