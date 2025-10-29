@@ -1,5 +1,5 @@
 # ruff: noqa: N806 N803
-
+from __future__ import annotations
 from typing import Literal, Optional
 
 import cv2
@@ -33,6 +33,7 @@ class GripperPoseComputer:
         self.initial_pose: Optional[GripperPose] = None
         self.raw_abs_pose: Optional[GripperPose] = None  # for visualization
 
+        # Map camera/hand axes into your robot's local axes
         self.robot_axes_in_hand = np.column_stack([
             [0, 0, -1],   # new x-axis
             [-1, 0, 0],   # new y-axis
@@ -71,12 +72,20 @@ class GripperPoseComputer:
     ) -> Optional[GripperPose]:
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         preds = self.estimator(frame_rgb, focal_length)
-        if len(preds)>1:
-            corrected_hand = "left" if self.hand == "right" else "right" # we do this because we use expect the frame to be flipped horizontally
-            preds = [p for p in preds if p.is_right == (corrected_hand == "right")]
 
-        if not preds:
+        # --------- FORCE a single-hand selection based on self.hand ----------
+        # Keep only the requested handedness (no mirroring assumptions).
+        want_right = (self.hand == "right")
+        if preds:
+            filtered = [p for p in preds if p.is_right == want_right]
+            if filtered:
+                preds = filtered
+            else:
+                # If nothing matched (rare), keep the strongest first prediction as fallback
+                preds = preds[:1]
+        else:
             return None
+        # ---------------------------------------------------------------------
 
         keypoints = preds[0].keypoints
         pose = self._compute_gripper_pose(keypoints)
