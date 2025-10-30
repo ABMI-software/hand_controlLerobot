@@ -1,0 +1,1 @@
+"""Camera management module"""

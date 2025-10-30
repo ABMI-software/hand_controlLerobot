@@ -15,20 +15,20 @@ class PickingSystem:
     def __init__(
         self,
         arducam_id: int = 0,
-        webcam_id: int = 1,
+        depth_camera_id: int = -1,  # -1 for OpenNI interface
         model_path: str = "yolov8n.pt",
         conf_threshold: float = 0.5,
     ):
         # Initialize camera manager
         self.camera_manager = CameraManager()
         self.camera_manager.add_camera("arducam", arducam_id, width=1280, height=720)
-        self.camera_manager.add_camera("webcam", webcam_id, width=640, height=480)
+        self.camera_manager.add_camera("depth", depth_camera_id, width=640, height=480)
         
         # Initialize object detector
         self.detector = ObjectDetector(model_path, conf_threshold)
         
         # Initialize hand tracker
-        self.hand_tracker = HandTracker(cam_idx=webcam_id, model="wilor")
+        self.hand_tracker = HandTracker(cam_idx=depth_camera_id, model="wilor")
         
         # Control flags
         self.running = False

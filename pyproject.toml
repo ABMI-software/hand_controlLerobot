@@ -1,10 +1,18 @@
 [tool.poetry]
-name = "hand-teleop"
+name = "hand-control"
 version = "0.1.0"
-description = "Self-contained hand tracking system for robot teleoperation."
+description = "System for robotic hand teleoperation and object detection"
 authors = ["Joe Clinton <joeclinton1@btinternet.com>"]
 license = "Apache-2.0"
 readme = "README.md"
+packages = [
+    { include = "hand_control", from = "src" }
+]
+
+[tool.poetry.scripts]
+dual-mode = "hand_control.core.dual_mode_system:main"
+object-detection = "scripts.run_object_detection:main"
+teleoperation = "scripts.run_teleoperation:main"
 
 [tool.poetry.dependencies]
 python = "3.10.*"
@@ -12,6 +20,8 @@ numpy = "^1.23.0"
 pydantic = "^1.10.0"
 pynput = "^1.7"
 opencv-python = "*"
+psutil = "^5.9.0"
+ultralytics = "*"  # for YOLOv8
 
 # Optional extras
 mediapipe = { version = "*", optional = true }
