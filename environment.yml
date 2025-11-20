@@ -28,9 +28,9 @@ dependencies:
   - pytest>=7.0.0
 
   - pip:
-    # Pin pip packages to specific versions to avoid deep dependency-resolution backtracking
+# Pin pip packages to specific versions to avoid deep dependency-resolution backtracking
     - pynput==1.8.1
-  - mediapipe==0.10.21
+    - mediapipe==0.10.21
   # lerobot has a large, tangled dependency graph that can cause pip's resolver
   # to fail during `conda env create`. Install it after the conda environment
   # is created and activated with:
